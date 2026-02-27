@@ -7,9 +7,11 @@ import {
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import { SignUpDto } from './dto/signup.dto';
+import { PermissionGuard } from 'src/guards/permission.guard';
+import { RequiredPermission } from 'src/decorators/permission.decorator';
 
 @Controller('auth')
-@UseGuards(AuthGuard())
+@UseGuards(AuthGuard(), PermissionGuard)
 export class AuthController {
   constructor(
     private readonly authService: AuthService
@@ -21,6 +23,7 @@ export class AuthController {
   }
 
   @Post('signup')
+  @RequiredPermission('user_create')
   signup(@Body() signupDto: SignUpDto) {
     return this.authService.signup(signupDto);
   }

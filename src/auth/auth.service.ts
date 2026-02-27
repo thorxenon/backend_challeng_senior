@@ -1,10 +1,3 @@
-import {
-  Controller,
-  Post,
-  Body,
-  HttpStatus,
-  HttpCode,
-} from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import { SignUpDto } from './dto/signup.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,9 +7,9 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from 'src/users/users.service';
 import { Role } from './entities/role.entity';
+import { HttpException, Injectable } from '@nestjs/common';
 
-
-@Controller('auth')
+@Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
@@ -28,15 +21,32 @@ export class AuthService {
     private readonly roleRepository: Repository<Role>,
   ){}
 
-  @Post('login')
-  @HttpCode(HttpStatus.CREATED)
-  login(@Body() loginDto: LoginDto) {
-    
+  async login(loginDto: LoginDto) {
+    try{
+      const user = await this.userRepository.findOne({ where:{ email: loginDto.email } })
+      if(!user) throw new HttpException('E-mail/Senha inválidos', 404);
+      const isPasswordValid = await user.verifyPassword(loginDto.password);
+      if(!isPasswordValid) throw new HttpException('E-mail/Senha inválidos', 404);
+      const payload = { email: user.email, id: user.id, role: user.role_id };
+      return {
+        access_token: this.jwtService.sign(payload),
+      }
+    }catch(error){
+      throw error;
+    }
   }
 
-  @Post('signup')
-  @HttpCode(HttpStatus.CREATED)
-  async signup(@Body() createUserDto: SignUpDto) {
-    
+  
+  async signup(signupDto: SignUpDto) {
+    try{
+      const existingUser = await this.userService.findUserByEmail(signupDto.email);
+      if(existingUser) throw new HttpException('E-mail já cadastrado', 409);
+      const user = this.userRepository.create({
+        ...signupDto,
+      });
+      return await this.userRepository.save(user);
+    }catch(error){
+      throw error;
+    }
   }
 }

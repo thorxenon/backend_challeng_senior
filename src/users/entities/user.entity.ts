@@ -1,7 +1,10 @@
 import { Role } from "../../auth/entities/role.entity";
-import { BeforeInsert, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import { BeforeInsert, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import type { Relation } from "typeorm";
 import * as bcrypt from 'bcrypt';
+import { Doctor } from "src/doctors/entities/doctor.entity";
+import { Patient } from "src/patients/entities/patient.entity";
+import { v7 as uuidv7 } from 'uuid';
 
 @Entity({ name: 'users' })
 export class User {
@@ -21,6 +24,12 @@ export class User {
     @Column({ name: 'role', nullable: false })
     role_id: number;
 
+    @OneToOne(() => Doctor, (doctor) => doctor.user)
+    doctor: Relation<Doctor>;
+
+    @OneToOne(() => Patient, (patient) => patient.user)
+    patient: Relation<Patient>;
+
     @Column({ type: 'varchar', length: 255 })
     name: string;
 
@@ -33,6 +42,11 @@ export class User {
     @BeforeInsert()
     private async generateHash(){
         this.password = await bcrypt.hash(this.password, 12);
+    }
+
+    @BeforeInsert()
+    private async generateId(){
+        this.id = uuidv7();
     }
 
     async verifyPassword(password: string): Promise<boolean>{

@@ -7,6 +7,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthMiddleware } from './middlewares/auth.middleware';
 import { AuthModule } from './auth/auth.module';
+import { DoctorsModule } from './doctors/doctors.module';
+import { AppointmentsModule } from './appointments/appointments.module';
 
 @Module({
   imports: [
@@ -36,7 +38,9 @@ import { AuthModule } from './auth/auth.module';
       global: true
     }),
     UsersModule,
-    AuthModule
+    AuthModule,
+    DoctorsModule,
+    AppointmentsModule
   ],
   controllers: [AppController],
   providers: [AppService],

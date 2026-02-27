@@ -44,13 +44,9 @@ export class AuthService {
       const user = this.userRepository.create({
         ...signupDto,
       });
-      await this.userRepository.save(user);
 
-      const payload = { email: user.email, id: user.id, role: user.role_id };
-      
-      return{
-        access_token: this.jwtService.sign(payload),
-      }
+      const newUser = await this.userRepository.save(user);
+      return await this.userService.findOne(newUser.id);
     }catch(error){
       throw error;
     }

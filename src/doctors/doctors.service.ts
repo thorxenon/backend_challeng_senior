@@ -24,6 +24,7 @@ export class DoctorsService {
       },
     });
 
+
     if (!user) throw new NotFoundException('Usuário não encontrado');
     if (user.doctor) throw new HttpException('Usuário já possui perfil de médico', 409);
     if (user.role?.name !== 'doctor') {
@@ -33,15 +34,22 @@ export class DoctorsService {
     const crmInUse = await this.doctorRepository.findOne({ where: { crm_number: createDoctorDto.crm_number } });
     if (crmInUse) throw new HttpException('CRM já cadastrado', 409);
 
-    const doctor = await this.doctorRepository.save(
-      this.doctorRepository.create({
+      const doctor = this.doctorRepository.create({
         id: user.id,
+        user,
         specialty: createDoctorDto.specialty,
         crm_number: createDoctorDto.crm_number,
-      }),
-    );
+      });
 
-    return await this.findOne(doctor.id);
+    await this.doctorRepository.save(doctor);
+    
+
+    const createdDoctor = await this.doctorRepository.findOne({ where: { id: doctor.id } });
+    if (!createdDoctor) {
+      throw new HttpException('Não foi possível persistir o perfil de médico', 500);
+    }
+
+    return await this.findOne(createdDoctor.id);
   }
 
   async findAll() {

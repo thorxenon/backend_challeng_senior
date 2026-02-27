@@ -31,6 +31,9 @@ export class Appointment {
     @Column({ name: 'scheduled_at', type: 'timestamp', nullable: false })
     scheduled_at: Date;
 
+    @Column({ name: 'estimated_end_at', type: 'timestamp', nullable: false })
+    estimated_end_at: Date;
+
     @Column({
         type: 'enum',
         enum: AppointmentStatus,
@@ -39,7 +42,7 @@ export class Appointment {
     status: AppointmentStatus;
 
     @Column({ type: 'text', nullable: true })
-    notes: string;
+    notes?: string;
 
     @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
     createdAt: Date;

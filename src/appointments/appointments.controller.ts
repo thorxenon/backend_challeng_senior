@@ -23,6 +23,7 @@ export class AppointmentsController {
     @Query('year') year?: string,
     @Query('month') month?: string,
     @Query('day') day?: string,
+    @Query('doctor_id') doctorId?: string,
   ) {
     const parsedYear = year ? Number(year) : undefined;
     const parsedMonth = month ? Number(month) : undefined;
@@ -48,6 +49,7 @@ export class AppointmentsController {
       year: parsedYear,
       month: parsedMonth,
       day: parsedDay,
+      doctor_id: doctorId,
     });
   }
 

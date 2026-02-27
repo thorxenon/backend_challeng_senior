@@ -23,7 +23,7 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     try{
-      const user = await this.userRepository.findOne({ where:{ email: loginDto.email } })
+      const user = await this.userRepository.findOne({ where:{ email: loginDto.email }, select:{ id: true, email: true, password: true, role_id: true } })
       if(!user) throw new HttpException('E-mail/Senha inválidos', 404);
       const isPasswordValid = await user.verifyPassword(loginDto.password);
       if(!isPasswordValid) throw new HttpException('E-mail/Senha inválidos', 404);
@@ -44,7 +44,13 @@ export class AuthService {
       const user = this.userRepository.create({
         ...signupDto,
       });
-      return await this.userRepository.save(user);
+      await this.userRepository.save(user);
+
+      const payload = { email: user.email, id: user.id, role: user.role_id };
+      
+      return{
+        access_token: this.jwtService.sign(payload),
+      }
     }catch(error){
       throw error;
     }

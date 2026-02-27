@@ -11,7 +11,6 @@ import { PermissionGuard } from 'src/guards/permission.guard';
 import { RequiredPermission } from 'src/decorators/permission.decorator';
 
 @Controller('auth')
-@UseGuards(AuthGuard(), PermissionGuard)
 export class AuthController {
   constructor(
     private readonly authService: AuthService
@@ -23,6 +22,7 @@ export class AuthController {
   }
 
   @Post('signup')
+  @UseGuards(AuthGuard(), PermissionGuard)
   @RequiredPermission('user_create')
   signup(@Body() signupDto: SignUpDto) {
     return this.authService.signup(signupDto);

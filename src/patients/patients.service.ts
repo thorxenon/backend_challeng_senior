@@ -1,12 +1,10 @@
-import { BadRequestException, HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { UpdatePatientDto } from './dto/update-patient.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Patient } from './entities/patient.entity';
 import { Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
-import { Role } from 'src/auth/entities/role.entity';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class PatientsService {
@@ -15,44 +13,22 @@ export class PatientsService {
     private readonly patientRepository: Repository<Patient>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Role)
-    private readonly roleRepository: Repository<Role>,
   ){}
 
   async create(createPatientDto: CreatePatientDto) {
     try {
-      const { user_id } = createPatientDto;
-      let patientUser: User | null = null;
+      const patientUser = await this.userRepository.findOne({
+        where: { id: createPatientDto.user_id },
+        relations: {
+          patient: true,
+          role: true,
+        },
+      });
 
-      if (user_id) {
-        patientUser = await this.userRepository.findOne({
-          where: { id: user_id },
-          relations: {
-            patient: true,
-          },
-        });
-
-        if (!patientUser) throw new NotFoundException('Usuário não encontrado');
-        if (patientUser.patient) throw new HttpException('Usuário já possui perfil de paciente', 409);
-      } else {
-        if (!createPatientDto.name || !createPatientDto.email || !createPatientDto.password) {
-          throw new BadRequestException('Para novo cadastro, informe name, email e password');
-        }
-
-        const emailInUse = await this.userRepository.findOne({ where: { email: createPatientDto.email } });
-        if (emailInUse) throw new HttpException('E-mail já cadastrado', 409);
-
-        const patientRole = await this.roleRepository.findOne({ where: { name: 'patient' } });
-        if (!patientRole) throw new NotFoundException('Role patient não encontrada');
-
-        patientUser = await this.userRepository.save(
-          this.userRepository.create({
-            name: createPatientDto.name,
-            email: createPatientDto.email,
-            password: createPatientDto.password,
-            role_id: patientRole.id,
-          }),
-        );
+      if (!patientUser) throw new NotFoundException('Usuário não encontrado');
+      if (patientUser.patient) throw new HttpException('Usuário já possui perfil de paciente', 409);
+      if (patientUser.role?.name !== 'patient') {
+        throw new HttpException('Usuário deve possuir role patient para criar perfil de paciente', 409);
       }
 
       const patient = await this.patientRepository.save(
@@ -105,28 +81,9 @@ export class PatientsService {
   async update(id: string, updatePatientDto: UpdatePatientDto) {
     const patient = await this.patientRepository.findOne({
       where: { id },
-      relations: {
-        user: true,
-      },
     });
 
     if (!patient) throw new NotFoundException('Paciente não encontrado');
-
-    if (updatePatientDto.email && updatePatientDto.email !== patient.user.email) {
-      const emailInUse = await this.userRepository.findOne({ where: { email: updatePatientDto.email } });
-      if (emailInUse) throw new HttpException('E-mail já cadastrado', 409);
-      patient.user.email = updatePatientDto.email;
-    }
-
-    if (updatePatientDto.name !== undefined) {
-      patient.user.name = updatePatientDto.name;
-    }
-
-    if (updatePatientDto.password) {
-      patient.user.password = await bcrypt.hash(updatePatientDto.password, 12);
-    }
-
-    await this.userRepository.save(patient.user);
 
     if (updatePatientDto.phone !== undefined) patient.phone = updatePatientDto.phone;
     if (updatePatientDto.birth_date !== undefined) patient.birth_date = new Date(updatePatientDto.birth_date);
@@ -137,19 +94,14 @@ export class PatientsService {
   }
 
   async remove(id: string) {
-    const patient = await this.patientRepository.findOne({
-      where: { id },
-      relations: {
-        user: true,
-      },
-    });
+    const patient = await this.patientRepository.findOne({ where: { id } });
 
     if (!patient) throw new NotFoundException('Paciente não encontrado');
 
-    await this.userRepository.remove(patient.user);
+    await this.patientRepository.remove(patient);
 
     return {
-      message: 'Paciente removido com sucesso',
+      message: 'Perfil do paciente removido com sucesso',
     };
   }
 }

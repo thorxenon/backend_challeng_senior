@@ -155,7 +155,7 @@ export class AppointmentsService {
     return await this.findOne(appointment.id);
   }
 
-  async findAll(filters?: { year?: number; month?: number; day?: number }) {
+  async findAll(filters?: { year?: number; month?: number; day?: number; doctor_id?: string }) {
     const query = this.appointmentRepository
       .createQueryBuilder('appointment')
       .leftJoinAndSelect('appointment.doctor', 'doctor')
@@ -173,6 +173,10 @@ export class AppointmentsService {
 
     if (filters?.day) {
       query.andWhere('EXTRACT(DAY FROM appointment.scheduled_at) = :day', { day: filters.day });
+    }
+
+    if (filters?.doctor_id) {
+      query.andWhere('appointment.doctor_id = :doctorId', { doctorId: filters.doctor_id });
     }
 
     query.orderBy('appointment.scheduled_at', 'ASC');

@@ -17,7 +17,7 @@ export class User {
     @Column({ type: 'varchar', length: 255, select: false })
     password: string;
 
-    @ManyToOne(() => Role, (role) => role.id)
+    @ManyToOne(() => Role, (role) => role.users)
     @JoinColumn({ name: 'role' })
     role: Relation<Role>;
 

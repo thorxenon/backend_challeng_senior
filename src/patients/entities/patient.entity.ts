@@ -13,10 +13,10 @@ export class Patient {
     user: Relation<User>;
 
     @Column({ type: 'varchar', length: 20, nullable: true })
-    phone: string;
+    phone?: string;
 
     @Column({ type: 'date', nullable: true })
-    birth_date: Date;
+    birth_date?: Date;
 
     @OneToMany(() => Appointment, (appointment) => appointment.patient)
     appointments: Relation<Appointment[]>;
